@@ -1,1 +1,1089 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NexusOS Web Edition</title>
+    <style>
+        :root {
+            --primary: #6366f1;
+            --primary-hover: #4f46e5;
+            --bg-dark: #0f172a;
+            --bg-panel: #1e293b;
+            --bg-glass: rgba(30, 41, 59, 0.7);
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --border: #334155;
+            --danger: #ef4444;
+            --success: #22c55e;
+            --warning: #f59e0b;
+            --radius: 12px;
+            --shadow: 0 10px 30px -10px rgba(0,0,0,0.5);
+            --font-mono: 'Consolas', 'Monaco', monospace;
+            --font-sans: 'Inter', system-ui, sans-serif;
+            --taskbar-height: 48px;
+        }
 
+        * { box-sizing: border-box; user-select: none; }
+        body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; font-family: var(--font-sans); background: #000; color: var(--text-main); }
+        
+        /* Boot Screen */
+        #boot-screen {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: #000; z-index: 9999; display: flex; flex-direction: column;
+            align-items: center; justify-content: center; transition: opacity 1s ease;
+        }
+        .loader {
+            width: 60px; height: 60px; border: 4px solid #333; border-top: 4px solid var(--primary);
+            border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 20px;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .boot-text { font-family: var(--font-mono); color: var(--text-muted); letter-spacing: 2px; }
+
+        /* Desktop */
+        #desktop {
+            width: 100%; height: calc(100% - var(--taskbar-height));
+            background-size: cover; background-position: center; position: relative;
+            transition: background-image 0.5s ease;
+        }
+        .desktop-icon {
+            width: 80px; height: 90px; display: flex; flex-direction: column;
+            align-items: center; justify-content: center; margin: 10px;
+            border-radius: 8px; cursor: pointer; transition: background 0.2s;
+            color: white; text-shadow: 0 1px 3px rgba(0,0,0,0.8);
+        }
+        .desktop-icon:hover { background: rgba(255,255,255,0.1); }
+        .desktop-icon svg { width: 48px; height: 48px; margin-bottom: 5px; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5)); }
+        .desktop-icon span { font-size: 12px; text-align: center; line-height: 1.2; }
+
+        /* Window System */
+        .window {
+            position: absolute; background: var(--bg-panel); border-radius: var(--radius);
+            box-shadow: var(--shadow); display: flex; flex-direction: column;
+            overflow: hidden; border: 1px solid var(--border); min-width: 300px; min-height: 200px;
+            transition: transform 0.1s, opacity 0.2s, width 0.2s, height 0.2s;
+            contain: layout style paint;
+        }
+        .window.minimized { transform: scale(0.7) translateY(200px); opacity: 0; pointer-events: none; }
+        .window.maximized { top: 0 !important; left: 0 !important; width: 100% !important; height: calc(100% - var(--taskbar-height)) !important; border-radius: 0; }
+        
+        .title-bar {
+            height: 36px; background: rgba(255,255,255,0.05); display: flex;
+            align-items: center; justify-content: space-between; padding: 0 10px;
+            cursor: default; border-bottom: 1px solid var(--border);
+        }
+        .title-drag-area { flex: 1; height: 100%; display: flex; align-items: center; font-size: 13px; font-weight: 500; }
+        .window-controls { display: flex; gap: 8px; }
+        .win-btn { width: 12px; height: 12px; border-radius: 50%; cursor: pointer; border: none; }
+        .win-close { background: #ff5f56; } .win-min { background: #ffbd2e; } .win-max { background: #27c93f; }
+        .win-btn:hover { filter: brightness(0.8); }
+
+        .window-content { flex: 1; overflow: auto; position: relative; background: var(--bg-dark); }
+        
+        /* Resize Handles */
+        .resize-handle { position: absolute; background: transparent; }
+        .rh-right { right: 0; top: 0; bottom: 0; width: 5px; cursor: e-resize; }
+        .rh-bottom { bottom: 0; left: 0; right: 0; height: 5px; cursor: s-resize; }
+        .rh-corner { right: 0; bottom: 0; width: 10px; height: 10px; cursor: se-resize; }
+
+        /* Taskbar */
+        #taskbar {
+            position: absolute; bottom: 0; left: 0; width: 100%; height: var(--taskbar-height);
+            background: var(--bg-glass); backdrop-filter: blur(12px);
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 0 10px; border-top: 1px solid var(--border); z-index: 9000;
+        }
+        .start-btn {
+            width: 36px; height: 36px; border-radius: 6px; display: flex;
+            align-items: center; justify-content: center; cursor: pointer;
+            transition: background 0.2s; margin-right: 10px;
+        }
+        .start-btn:hover { background: rgba(255,255,255,0.1); }
+        .taskbar-apps { flex: 1; display: flex; gap: 4px; padding-left: 10px; }
+        .taskbar-item {
+            width: 40px; height: 40px; border-radius: 6px; display: flex;
+            align-items: center; justify-content: center; cursor: pointer;
+            position: relative; transition: all 0.2s;
+        }
+        .taskbar-item:hover { background: rgba(255,255,255,0.1); }
+        .taskbar-item.active { background: rgba(255,255,255,0.15); }
+        .taskbar-item.active::after {
+            content: ''; position: absolute; bottom: 2px; width: 16px; height: 3px;
+            background: var(--primary); border-radius: 2px;
+        }
+        .system-tray { display: flex; align-items: center; gap: 15px; font-size: 12px; color: var(--text-muted); }
+        .tray-icon { cursor: pointer; transition: color 0.2s; }
+        .tray-icon:hover { color: var(--text-main); }
+
+        /* Start Menu */
+        #start-menu {
+            position: absolute; bottom: 60px; left: 10px; width: 320px; height: 450px;
+            background: var(--bg-glass); backdrop-filter: blur(20px);
+            border-radius: var(--radius); border: 1px solid var(--border);
+            transform: translateY(20px); opacity: 0; pointer-events: none;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); z-index: 9001;
+            display: flex; flex-direction: column;
+        }
+        #start-menu.open { transform: translateY(0); opacity: 1; pointer-events: auto; }
+        .start-header { padding: 20px; border-bottom: 1px solid var(--border); }
+        .user-profile { display: flex; align-items: center; gap: 10px; }
+        .avatar { width: 40px; height: 40px; border-radius: 50%; background: var(--primary); display: flex; align-items: center; justify-content: center; font-weight: bold; }
+        .start-grid { padding: 15px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; overflow-y: auto; flex: 1; }
+        .start-item { display: flex; flex-direction: column; align-items: center; gap: 5px; cursor: pointer; padding: 10px; border-radius: 8px; transition: background 0.2s; }
+        .start-item:hover { background: rgba(255,255,255,0.1); }
+        .start-item svg { width: 32px; height: 32px; }
+        .start-item span { font-size: 11px; text-align: center; }
+
+        /* Context Menu */
+        #context-menu {
+            position: absolute; background: var(--bg-panel); border: 1px solid var(--border);
+            border-radius: 8px; padding: 5px 0; min-width: 150px; display: none;
+            box-shadow: var(--shadow); z-index: 9999;
+        }
+        .ctx-item { padding: 8px 15px; font-size: 13px; cursor: pointer; display: flex; justify-content: space-between; }
+        .ctx-item:hover { background: var(--primary); color: white; }
+        .ctx-separator { height: 1px; background: var(--border); margin: 4px 0; }
+
+        /* App Specific Styles */
+        /* Terminal */
+        .terminal-body { background: #0c0c0c; color: #ccc; padding: 10px; font-family: var(--font-mono); font-size: 14px; height: 100%; overflow-y: auto; }
+        .term-line { margin-bottom: 4px; word-wrap: break-word; }
+        .term-input-line { display: flex; }
+        .term-prompt { color: var(--success); margin-right: 8px; }
+        .term-input { background: transparent; border: none; color: white; outline: none; flex: 1; font-family: var(--font-mono); }
+        
+        /* VS Code */
+        .vscode-layout { display: flex; height: 100%; }
+        .vscode-sidebar { width: 50px; background: #252526; display: flex; flex-direction: column; align-items: center; padding-top: 10px; gap: 15px; }
+        .vscode-explorer { width: 200px; background: #252526; border-right: 1px solid #333; display: flex; flex-direction: column; }
+        .vscode-editor { flex: 1; background: #1e1e1e; display: flex; flex-direction: column; }
+        .vscode-tabs { height: 35px; background: #252526; display: flex; align-items: center; }
+        .vscode-tab { padding: 0 15px; height: 100%; display: flex; align-items: center; background: #1e1e1e; border-right: 1px solid #333; font-size: 13px; }
+        .vscode-content { flex: 1; padding: 10px; font-family: var(--font-mono); font-size: 14px; color: #d4d4d4; outline: none; white-space: pre; overflow: auto; }
+        .line-num { color: #858585; margin-right: 15px; user-select: none; }
+        
+        /* Calculator */
+        .calc-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1px; height: 100%; background: #333; }
+        .calc-btn { background: #444; border: none; color: white; font-size: 18px; cursor: pointer; transition: background 0.1s; }
+        .calc-btn:hover { background: #555; }
+        .calc-btn.op { background: var(--primary); }
+        .calc-display { grid-column: span 4; background: #222; color: white; font-size: 32px; text-align: right; padding: 20px; font-family: var(--font-mono); }
+
+        /* Snake Game */
+        #snake-canvas { background: #111; display: block; margin: 0 auto; }
+        .game-over { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(0,0,0,0.8); padding: 20px; border-radius: 8px; text-align: center; display: none; }
+
+        /* Settings */
+        .settings-layout { display: flex; height: 100%; }
+        .settings-nav { width: 200px; background: rgba(255,255,255,0.05); padding: 20px; }
+        .settings-nav-item { padding: 10px; cursor: pointer; border-radius: 6px; margin-bottom: 5px; }
+        .settings-nav-item:hover, .settings-nav-item.active { background: rgba(255,255,255,0.1); }
+        .settings-content { flex: 1; padding: 30px; overflow-y: auto; }
+        .setting-group { margin-bottom: 30px; }
+        .setting-title { font-size: 18px; margin-bottom: 15px; color: var(--text-main); }
+        .color-picker { display: flex; gap: 10px; }
+        .color-opt { width: 30px; height: 30px; border-radius: 50%; cursor: pointer; border: 2px solid transparent; }
+        .color-opt.selected { border-color: white; }
+
+        /* Notifications */
+        #notification-area { position: absolute; top: 20px; right: 20px; display: flex; flex-direction: column; gap: 10px; z-index: 10000; pointer-events: none; }
+        .toast {
+            background: var(--bg-panel); border-left: 4px solid var(--primary);
+            padding: 15px 20px; border-radius: 4px; box-shadow: var(--shadow);
+            min-width: 250px; transform: translateX(120%); transition: transform 0.3s cubic-bezier(0.68, -0.55, 0.27, 1.55);
+            pointer-events: auto; display: flex; align-items: center; gap: 10px;
+        }
+        .toast.show { transform: translateX(0); }
+        .toast-icon { width: 20px; height: 20px; }
+        .toast-content h4 { margin: 0; font-size: 14px; }
+        .toast-content p { margin: 4px 0 0; font-size: 12px; color: var(--text-muted); }
+
+        /* Lock Screen */
+        #lock-screen {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect fill="%230f172a" width="100" height="100"/><circle cx="50" cy="50" r="40" fill="none" stroke="%236366f1" stroke-width="0.5" opacity="0.5"/></svg>');
+            background-size: cover; z-index: 10000; display: flex; flex-direction: column;
+            align-items: center; justify-content: center; backdrop-filter: blur(10px);
+            transition: transform 0.5s ease-in-out;
+        }
+        #lock-screen.hidden { transform: translateY(-100%); }
+        .lock-clock { font-size: 80px; font-weight: 200; color: white; text-shadow: 0 4px 10px rgba(0,0,0,0.5); }
+        .lock-date { font-size: 20px; color: rgba(255,255,255,0.8); margin-top: 10px; }
+        .lock-hint { margin-top: 50px; font-size: 14px; color: rgba(255,255,255,0.6); animation: bounce 2s infinite; }
+        @keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(10px); } }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #444; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #555; }
+
+        /* Paint App */
+        .paint-toolbar { height: 40px; background: #333; display: flex; align-items: center; padding: 0 10px; gap: 10px; }
+        .paint-canvas-container { flex: 1; background: #fff; cursor: crosshair; overflow: hidden; position: relative; }
+        .tool-btn { width: 30px; height: 30px; background: #555; border: none; border-radius: 4px; color: white; cursor: pointer; }
+        .tool-btn.active { background: var(--primary); }
+
+        /* Browser App */
+        .browser-bar { height: 40px; background: #333; display: flex; align-items: center; padding: 5px; gap: 10px; }
+        .url-input { flex: 1; background: #222; border: 1px solid #444; color: white; padding: 5px 10px; border-radius: 20px; outline: none; font-size: 13px; }
+        .browser-frame { flex: 1; background: white; border: none; }
+    </style>
+</head>
+<body>
+
+    <!-- Boot Screen -->
+    <div id="boot-screen">
+        <div class="loader"></div>
+        <div class="boot-text">NEXUS OS INITIALIZING...</div>
+        <div style="margin-top: 10px; font-size: 12px; color: #555;" id="boot-log">Loading Kernel...</div>
+    </div>
+
+    <!-- Lock Screen -->
+    <div id="lock-screen">
+        <div class="lock-clock" id="lock-clock">12:00</div>
+        <div class="lock-date" id="lock-date">Monday, January 1</div>
+        <div class="lock-hint">Click or Press Any Key to Unlock</div>
+    </div>
+
+    <!-- Desktop Environment -->
+    <div id="desktop">
+        <!-- Icons injected by JS -->
+    </div>
+
+    <!-- Start Menu -->
+    <div id="start-menu">
+        <div class="start-header">
+            <div class="user-profile">
+                <div class="avatar">U</div>
+                <div>
+                    <div style="font-weight: bold;">User</div>
+                    <div style="font-size: 12px; color: var(--text-muted);">Administrator</div>
+                </div>
+            </div>
+        </div>
+        <div class="start-grid" id="start-grid">
+            <!-- Apps injected by JS -->
+        </div>
+    </div>
+
+    <!-- Context Menu -->
+    <div id="context-menu"></div>
+
+    <!-- Notification Area -->
+    <div id="notification-area"></div>
+
+    <!-- Taskbar -->
+    <div id="taskbar">
+        <div style="display: flex; align-items: center;">
+            <div class="start-btn" id="start-btn">
+                <svg viewBox="0 0 24 24" fill="white" width="20" height="20"><path d="M3 3h8v8H3V3zm10 0h8v8h-8V3zM3 13h8v8H3v-8zm10 0h8v8h-8v-8z"/></svg>
+            </div>
+            <div class="taskbar-apps" id="taskbar-apps"></div>
+        </div>
+        <div class="system-tray">
+            <div class="tray-icon" title="WiFi">
+                <svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16"><path d="M12 3C7.5 3 3.5 4.5 0 7l12 15L24 7c-3.5-2.5-7.5-4-12-4zm0 2.5c3.5 0 6.5 1 9 2.5L12 19 3 8c2.5-1.5 5.5-2.5 9-2.5z"/></svg>
+            </div>
+            <div class="tray-icon" title="Volume">
+                <svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg>
+            </div>
+            <div id="tray-clock" style="min-width: 50px; text-align: right;">12:00 PM</div>
+        </div>
+    </div>
+
+<script>
+/**
+ * NEXUS OS CORE ENGINE
+ * A comprehensive single-file operating system simulation.
+ */
+
+// --- System State & Configuration ---
+const System = {
+    apps: {},
+    windows: [],
+    zIndexCounter: 100,
+    fs: {},
+    settings: {
+        theme: 'dark',
+        accent: '#6366f1',
+        wallpaper: 'linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%)'
+    },
+    processes: [],
+    clipboard: null,
+    
+    init() {
+        this.loadFS();
+        this.registerApps();
+        this.boot();
+    },
+
+    loadFS() {
+        const saved = localStorage.getItem('nexus_fs');
+        if (saved) {
+            this.fs = JSON.parse(saved);
+        } else {
+            this.fs = {
+                '/': { type: 'dir', children: ['home', 'bin', 'etc'] },
+                '/home': { type: 'dir', children: ['user'] },
+                '/home/user': { type: 'dir', children: ['documents', 'downloads', 'pictures'] },
+                '/home/user/documents': { type: 'dir', children: ['readme.txt'] },
+                '/home/user/documents/readme.txt': { type: 'file', content: 'Welcome to NexusOS!\nThis is a virtual file system.' },
+                '/bin': { type: 'dir', children: ['bash', 'ls', 'cat'] },
+                '/etc': { type: 'dir', children: ['config.json'] },
+                '/etc/config.json': { type: 'file', content: '{"version": "1.0", "kernel": "Nexus"}' }
+            };
+            this.saveFS();
+        }
+    },
+
+    saveFS() {
+        localStorage.setItem('nexus_fs', JSON.stringify(this.fs));
+    },
+
+    registerApps() {
+        // App Registry
+        this.apps = {
+            'terminal': {
+                id: 'terminal', name: 'Terminal', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="4 17 10 11 4 5"></polyline><line x1="12" y1="19" x2="20" y2="19"></line></svg>',
+                component: TerminalApp, width: 600, height: 400
+            },
+            'editor': {
+                id: 'editor', name: 'Code Studio', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="#27c93f" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></line><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>',
+                component: EditorApp, width: 800, height: 500
+            },
+            'browser': {
+                id: 'browser', name: 'Web Surf', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>',
+                component: BrowserApp, width: 900, height: 600
+            },
+            'settings': {
+                id: 'settings', name: 'Settings', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>',
+                component: SettingsApp, width: 700, height: 500
+            },
+            'snake': {
+                id: 'snake', name: 'Snake Game', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2"><path d="M2 12h20M2 12l5-5m-5 5l5 5M22 12l-5-5m5 5l-5 5"/></svg>',
+                component: SnakeApp, width: 400, height: 450
+            },
+            'calc': {
+                id: 'calc', name: 'Calculator', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2"><rect x="4" y="2" width="16" height="20" rx="2"></rect><line x1="8" y1="6" x2="16" y2="6"></line><line x1="8" y1="10" x2="16" y2="10"></line><line x1="8" y1="14" x2="16" y2="14"></line><line x1="8" y1="18" x2="16" y2="18"></line></svg>',
+                component: CalcApp, width: 300, height: 400
+            },
+            'paint': {
+                id: 'paint', name: 'Paint', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="#ec4899" stroke-width="2"><path d="M12 19l7-7 3 3-7 7-3-3z"></path><path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"></path><path d="M2 2l7.586 7.586"></path><circle cx="11" cy="11" r="2"></circle></svg>',
+                component: PaintApp, width: 600, height: 500
+            },
+            'files': {
+                id: 'files', name: 'File Explorer', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="#6366f1" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>',
+                component: FilesApp, width: 700, height: 450
+            }
+        };
+    },
+
+    boot() {
+        const bootScreen = document.getElementById('boot-screen');
+        const bootLog = document.getElementById('boot-log');
+        const logs = ["Loading Kernel...", "Mounting File System...", "Initializing Graphics...", "Starting Window Manager...", "Loading User Profile..."];
+        
+        let i = 0;
+        const interval = setInterval(() => {
+            if (i >= logs.length) {
+                clearInterval(interval);
+                setTimeout(() => {
+                    bootScreen.style.opacity = '0';
+                    setTimeout(() => bootScreen.remove(), 1000);
+                    this.startSession();
+                }, 800);
+            } else {
+                bootLog.textContent = logs[i];
+                i++;
+            }
+        }, 400);
+    },
+
+    startSession() {
+        this.renderDesktop();
+        this.renderStartMenu();
+        this.updateClock();
+        setInterval(() => this.updateClock(), 1000);
+        this.setupEventListeners();
+        WindowManager.init();
+        
+        // Auto open welcome terminal
+        setTimeout(() => {
+            WindowManager.open('terminal');
+            const win = document.querySelector('.window');
+            if(win) win.querySelector('.term-input').focus();
+        }, 1500);
+    },
+
+    renderDesktop() {
+        const desktop = document.getElementById('desktop');
+        desktop.style.background = System.settings.wallpaper;
+        Object.values(System.apps).forEach(app => {
+            const icon = document.createElement('div');
+            icon.className = 'desktop-icon';
+            icon.innerHTML = `${app.icon}<span>${app.name}</span>`;
+            icon.ondblclick = () => WindowManager.open(app.id);
+            desktop.appendChild(icon);
+        });
+    },
+
+    renderStartMenu() {
+        const grid = document.getElementById('start-grid');
+        Object.values(System.apps).forEach(app => {
+            const item = document.createElement('div');
+            item.className = 'start-item';
+            item.innerHTML = `${app.icon}<span>${app.name}</span>`;
+            item.onclick = () => {
+                WindowManager.open(app.id);
+                document.getElementById('start-menu').classList.remove('open');
+            };
+            grid.appendChild(item);
+        });
+    },
+
+    updateClock() {
+        const now = new Date();
+        const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        const dateStr = now.toLocaleDateString([], { weekday: 'long', month: 'long', day: 'numeric' });
+        
+        document.getElementById('tray-clock').textContent = timeStr;
+        document.getElementById('lock-clock').textContent = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
+        document.getElementById('lock-date').textContent = dateStr;
+    },
+
+    setupEventListeners() {
+        // Start Menu Toggle
+        document.getElementById('start-btn').onclick = (e) => {
+            e.stopPropagation();
+            document.getElementById('start-menu').classList.toggle('open');
+        };
+        
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('#start-menu') && !e.target.closest('#start-btn')) {
+                document.getElementById('start-menu').classList.remove('open');
+            }
+            hideContextMenu();
+        });
+
+        // Lock Screen
+        const lock = document.getElementById('lock-screen');
+        const unlock = () => lock.classList.add('hidden');
+        lock.addEventListener('click', unlock);
+        document.addEventListener('keydown', () => lock.classList.contains('hidden') || unlock());
+
+        // Context Menu
+        document.addEventListener('contextmenu', (e) => {
+            e.preventDefault();
+            showContextMenu(e.clientX, e.clientY);
+        });
+    },
+
+    notify(title, message, type = 'info') {
+        const area = document.getElementById('notification-area');
+        const toast = document.createElement('div');
+        toast.className = 'toast';
+        const color = type === 'error' ? '#ef4444' : type === 'success' ? '#22c55e' : '#6366f1';
+        toast.style.borderLeftColor = color;
+        toast.innerHTML = `
+            <div class="toast-icon" style="color:${color}">●</div>
+            <div class="toast-content">
+                <h4>${title}</h4>
+                <p>${message}</p>
+            </div>
+        `;
+        area.appendChild(toast);
+        setTimeout(() => toast.classList.add('show'), 10);
+        setTimeout(() => {
+            toast.classList.remove('show');
+            setTimeout(() => toast.remove(), 300);
+        }, 3000);
+    }
+};
+
+// --- Window Manager ---
+const WindowManager = {
+    init() {
+        this.desktop = document.getElementById('desktop');
+        this.taskbarApps = document.getElementById('taskbar-apps');
+    },
+
+    open(appId, args = {}) {
+        const app = System.apps[appId];
+        if (!app) return;
+
+        const id = 'win-' + Date.now();
+        const win = document.createElement('div');
+        win.className = 'window';
+        win.id = id;
+        win.style.left = (100 + (System.windows.length * 20)) + 'px';
+        win.style.top = (50 + (System.windows.length * 20)) + 'px';
+        win.style.width = (args.width || app.width) + 'px';
+        win.style.height = (args.height || app.height) + 'px';
+        win.style.zIndex = ++System.zIndexCounter;
+
+        win.innerHTML = `
+            <div class="title-bar" onmousedown="WindowManager.focus('${id}')">
+                <div class="title-drag-area">${app.icon} <span style="margin-left:8px">${app.name}</span></div>
+                <div class="window-controls">
+                    <button class="win-btn win-min" onclick="WindowManager.minimize('${id}')"></button>
+                    <button class="win-btn win-max" onclick="WindowManager.maximize('${id}')"></button>
+                    <button class="win-btn win-close" onclick="WindowManager.close('${id}')"></button>
+                </div>
+            </div>
+            <div class="window-content" id="${id}-content"></div>
+            <div class="resize-handle rh-right"></div>
+            <div class="resize-handle rh-bottom"></div>
+            <div class="resize-handle rh-corner"></div>
+        `;
+
+        this.desktop.appendChild(win);
+        System.windows.push({ id, appId, minimized: false, maximized: false });
+        
+        // Initialize App Content
+        const contentDiv = win.querySelector('.window-content');
+        if (app.component) {
+            const appInstance = new app.component(contentDiv, win, args);
+            appInstance.mount();
+        }
+
+        this.updateTaskbar();
+        this.makeDraggable(win);
+        this.makeResizable(win);
+        this.focus(id);
+        
+        System.notify(app.name, 'Application opened', 'success');
+        return id;
+    },
+
+    close(id) {
+        const win = document.getElementById(id);
+        if (win) {
+            win.style.transform = 'scale(0.9)';
+            win.style.opacity = '0';
+            setTimeout(() => win.remove(), 200);
+            System.windows = System.windows.filter(w => w.id !== id);
+            this.updateTaskbar();
+        }
+    },
+
+    minimize(id) {
+        const win = document.getElementById(id);
+        const winObj = System.windows.find(w => w.id === id);
+        if (win && winObj) {
+            win.classList.add('minimized');
+            winObj.minimized = true;
+        }
+    },
+
+    maximize(id) {
+        const win = document.getElementById(id);
+        const winObj = System.windows.find(w => w.id === id);
+        if (win && winObj) {
+            winObj.maximized = !winObj.maximized;
+            if (winObj.maximized) win.classList.add('maximized');
+            else win.classList.remove('maximized');
+        }
+    },
+
+    focus(id) {
+        const win = document.getElementById(id);
+        const winObj = System.windows.find(w => w.id === id);
+        if (win && winObj) {
+            if (winObj.minimized) {
+                win.classList.remove('minimized');
+                winObj.minimized = false;
+            }
+            win.style.zIndex = ++System.zIndexCounter;
+            this.updateTaskbar();
+        }
+    },
+
+    updateTaskbar() {
+        this.taskbarApps.innerHTML = '';
+        System.windows.forEach(win => {
+            const app = System.apps[win.appId];
+            const item = document.createElement('div');
+            item.className = `taskbar-item ${win.id === document.querySelector('.window[style*="z-index: '+System.zIndexCounter+'"]') ? 'active' : ''}`;
+            if (System.zIndexCounter === parseInt(win.style.zIndex)) item.classList.add('active');
+            
+            item.innerHTML = app.icon;
+            item.onclick = () => {
+                if (win.minimized) this.focus(win.id);
+                else if (parseInt(win.style.zIndex) === System.zIndexCounter) this.minimize(win.id);
+                else this.focus(win.id);
+            };
+            this.taskbarApps.appendChild(item);
+        });
+    },
+
+    makeDraggable(win) {
+        const header = win.querySelector('.title-bar');
+        let isDragging = false, startX, startY, startLeft, startTop;
+
+        header.onmousedown = (e) => {
+            if (e.target.closest('.window-controls')) return;
+            isDragging = true;
+            startX = e.clientX;
+            startY = e.clientY;
+            startLeft = win.offsetLeft;
+            startTop = win.offsetTop;
+            this.focus(win.id);
+        };
+
+        document.onmousemove = (e) => {
+            if (!isDragging || win.classList.contains('maximized')) return;
+            const dx = e.clientX - startX;
+            const dy = e.clientY - startY;
+            win.style.left = (startLeft + dx) + 'px';
+            win.style.top = (startTop + dy) + 'px';
+        };
+
+        document.onmouseup = () => isDragging = false;
+    },
+
+    makeResizable(win) {
+        const handles = win.querySelectorAll('.resize-handle');
+        handles.forEach(handle => {
+            handle.onmousedown = (e) => {
+                e.stopPropagation();
+                const isRight = handle.classList.contains('rh-right') || handle.classList.contains('rh-corner');
+                const isBottom = handle.classList.contains('rh-bottom') || handle.classList.contains('rh-corner');
+                
+                const startX = e.clientX;
+                const startY = e.clientY;
+                const startWidth = win.offsetWidth;
+                const startHeight = win.offsetHeight;
+
+                const doDrag = (e) => {
+                    if (isRight) win.style.width = (startWidth + e.clientX - startX) + 'px';
+                    if (isBottom) win.style.height = (startHeight + e.clientY - startY) + 'px';
+                };
+
+                const stopDrag = () => {
+                    document.removeEventListener('mousemove', doDrag);
+                    document.removeEventListener('mouseup', stopDrag);
+                };
+
+                document.addEventListener('mousemove', doDrag);
+                document.addEventListener('mouseup', stopDrag);
+            };
+        });
+    }
+};
+
+// --- Application Components ---
+
+class TerminalApp {
+    constructor(container, win, args) {
+        this.container = container;
+        this.history = [];
+        this.cmdIndex = -1;
+        this.path = ['/home', 'user'];
+    }
+    mount() {
+        this.container.className = 'terminal-body';
+        this.container.innerHTML = `<div id="term-output-${this.container.parentElement.id}"></div><div class="term-input-line"><span class="term-prompt">user@nexus:~$</span><input class="term-input" type="text" autocomplete="off" spellcheck="false"></div>`;
+        const input = this.container.querySelector('.term-input');
+        const output = document.getElementById(`term-output-${this.container.parentElement.id}`);
+        
+        this.print("NexusOS [Version 1.0.0]\n(c) Nexus Corporation. All rights reserved.\nType 'help' for commands.\n");
+        
+        input.focus();
+        this.container.onclick = () => input.focus();
+        
+        input.onkeydown = (e) => {
+            if (e.key === 'Enter') {
+                const cmd = input.value.trim();
+                this.history.push(cmd);
+                this.cmdIndex = this.history.length;
+                this.print(`<span style="color:#888">user@nexus:~$ ${cmd}</span>`);
+                this.exec(cmd, output);
+                input.value = '';
+                this.container.scrollTop = this.container.scrollHeight;
+            } else if (e.key === 'ArrowUp') {
+                if (this.cmdIndex > 0) input.value = this.history[--this.cmdIndex];
+            } else if (e.key === 'ArrowDown') {
+                if (this.cmdIndex < this.history.length - 1) input.value = this.history[++this.cmdIndex];
+                else input.value = '';
+            }
+        };
+    }
+    print(html) {
+        const output = this.container.querySelector('#term-output-' + this.container.parentElement.id);
+        const div = document.createElement('div');
+        div.className = 'term-line';
+        div.innerHTML = html;
+        output.appendChild(div);
+    }
+    exec(cmd, output) {
+        const parts = cmd.split(' ');
+        const command = parts[0].toLowerCase();
+        const args = parts.slice(1);
+
+        switch(command) {
+            case 'help':
+                this.print("Available commands: help, ls, cd, mkdir, touch, cat, rm, echo, clear, neofetch, date, whoami");
+                break;
+            case 'clear':
+                output.innerHTML = '';
+                break;
+            case 'ls':
+                this.print("documents  downloads  pictures  readme.txt");
+                break;
+            case 'whoami':
+                this.print("user");
+                break;
+            case 'date':
+                this.print(new Date().toString());
+                break;
+            case 'neofetch':
+                this.print(`<pre style="color:var(--primary)">
+       _   _      __
+      | \\ | |    /  |
+      |  \\| |    \\  |
+      | . \` |     | |
+      | |\\  |     | |
+      \\_| \\_/     \\_/
+      
+      OS: NexusOS Web
+      Kernel: 5.15.0-nexus
+      Shell: bash 5.1
+      Theme: Dark Matter
+      CPU: Virtual Core i9
+      Memory: 1024MB / 8192MB
+                </pre>`);
+                break;
+            case 'echo':
+                this.print(args.join(' '));
+                break;
+            case 'mkdir':
+                if(args[0]) this.print(`Created directory '${args[0]}'`);
+                else this.print("Usage: mkdir <name>");
+                break;
+            default:
+                if (cmd !== '') this.print(`Command not found: ${command}`);
+        }
+    }
+}
+
+class EditorApp {
+    constructor(container) { this.container = container; }
+    mount() {
+        this.container.innerHTML = `
+            <div class="vscode-layout">
+                <div class="vscode-sidebar">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="white" width="24" height="24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path></svg>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="#666" width="24" height="24"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                </div>
+                <div class="vscode-explorer">
+                    <div style="padding:10px; font-size:12px; font-weight:bold; color:#888">EXPLORER</div>
+                    <div style="padding:5px 10px; font-size:13px; color:#ccc">📄 main.js</div>
+                    <div style="padding:5px 10px; font-size:13px; color:#ccc">📄 style.css</div>
+                    <div style="padding:5px 10px; font-size:13px; color:#ccc">📄 index.html</div>
+                </div>
+                <div class="vscode-editor">
+                    <div class="vscode-tabs"><div class="vscode-tab">main.js</div></div>
+                    <div class="vscode-content" contenteditable="true">console.log("Hello NexusOS!");\n\nfunction init() {\n  return "System Ready";\n}</div>
+                </div>
+            </div>
+        `;
+    }
+}
+
+class BrowserApp {
+    constructor(container) { this.container = container; }
+    mount() {
+        this.container.innerHTML = `
+            <div style="display:flex; flex-direction:column; height:100%">
+                <div class="browser-bar">
+                    <button style="background:none; border:none; color:white; cursor:pointer">←</button>
+                    <button style="background:none; border:none; color:white; cursor:pointer">→</button>
+                    <input class="url-input" value="https://nexus.os/welcome" readonly>
+                    <button style="background:none; border:none; color:white; cursor:pointer">⟳</button>
+                </div>
+                <iframe class="browser-frame" src="about:blank"></iframe>
+            </div>
+        `;
+        // Simulate loading
+        const iframe = this.container.querySelector('iframe');
+        setTimeout(() => {
+            iframe.srcdoc = `<body style="font-family:sans-serif; display:flex; align-items:center; justify-content:center; height:100vh; margin:0; background:#f0f0f0; color:#333"><h1>Welcome to the Nexus Web</h1></body>`;
+        }, 500);
+    }
+}
+
+class SettingsApp {
+    constructor(container) { this.container = container; }
+    mount() {
+        this.container.innerHTML = `
+            <div class="settings-layout">
+                <div class="settings-nav">
+                    <div class="settings-nav-item active">Personalization</div>
+                    <div class="settings-nav-item">System</div>
+                    <div class="settings-nav-item">Apps</div>
+                    <div class="settings-nav-item">About</div>
+                </div>
+                <div class="settings-content">
+                    <div class="setting-group">
+                        <div class="setting-title">Accent Color</div>
+                        <div class="color-picker">
+                            <div class="color-opt selected" style="background:#6366f1" onclick="System.settings.accent='#6366f1'; document.documentElement.style.setProperty('--primary', '#6366f1')"></div>
+                            <div class="color-opt" style="background:#ec4899" onclick="System.settings.accent='#ec4899'; document.documentElement.style.setProperty('--primary', '#ec4899')"></div>
+                            <div class="color-opt" style="background:#22c55e" onclick="System.settings.accent='#22c55e'; document.documentElement.style.setProperty('--primary', '#22c55e')"></div>
+                            <div class="color-opt" style="background:#f59e0b" onclick="System.settings.accent='#f59e0b'; document.documentElement.style.setProperty('--primary', '#f59e0b')"></div>
+                        </div>
+                    </div>
+                    <div class="setting-group">
+                        <div class="setting-title">Background</div>
+                        <select onchange="System.settings.wallpaper = this.value; document.getElementById('desktop').style.background = this.value" style="width:100%; padding:8px; background:#333; color:white; border:1px solid #444; border-radius:4px">
+                            <option value="linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%)">Deep Space</option>
+                            <option value="linear-gradient(45deg, #111 0%, #333 100%)">Mono Gray</option>
+                            <option value="linear-gradient(to bottom, #2b1055, #7597de)">Purple Haze</option>
+                            <option value="url('data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'100\' height=\'100\'><rect fill=\'%231a1a1a\' width=\'100\' height=\'100\'/><circle cx=\'50\' cy=\'50\' r=\'20\' fill=\'%23333\'/></svg>')">Pattern</option>
+                        </select>
+                    </div>
+                    <div class="setting-group">
+                        <div class="setting-title">System Info</div>
+                        <div style="font-size:13px; color:#aaa; line-height:1.6">
+                            NexusOS v1.0<br>
+                            Build: 2023.10<br>
+                            Engine: Pure JS/HTML5<br>
+                            Resolution: ${window.innerWidth}x${window.innerHeight}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+}
+
+class SnakeApp {
+    constructor(container) { this.container = container; }
+    mount() {
+        this.container.innerHTML = `<canvas id="snake-canvas" width="380" height="380"></canvas><div class="game-over" id="game-over"><h2>Game Over</h2><p>Score: <span id="final-score">0</span></p><button onclick="this.parentElement.parentElement.querySelector('.snake-instance').restart()" style="padding:8px 16px; background:var(--primary); border:none; color:white; border-radius:4px; cursor:pointer">Restart</button></div>`;
+        this.canvas = this.container.querySelector('#snake-canvas');
+        this.ctx = this.canvas.getContext('2d');
+        this.grid = 20;
+        this.snake = { x: 160, y: 160, dx: 20, dy: 0, cells: [] };
+        this.food = { x: 320, y: 320 };
+        this.score = 0;
+        this.running = true;
+        this.container.classList.add('snake-instance');
+        this.container.snakeInstance = this;
+        
+        document.addEventListener('keydown', e => {
+            if (!this.running) return;
+            if (e.key === 'ArrowLeft' && this.dx === 0) { this.dx = -this.grid; this.dy = 0; }
+            if (e.key === 'ArrowUp' && this.dy === 0) { this.dy = -this.grid; this.dx = 0; }
+            if (e.key === 'ArrowRight' && this.dx === 0) { this.dx = this.grid; this.dy = 0; }
+            if (e.key === 'ArrowDown' && this.dy === 0) { this.dy = this.grid; this.dx = 0; }
+        });
+        
+        this.loop = setInterval(() => this.update(), 100);
+    }
+    
+    get dx() { return this.snake.dx; }
+    set dx(v) { this.snake.dx = v; }
+    get dy() { return this.snake.dy; }
+    set dy(v) { this.snake.dy = v; }
+
+    update() {
+        if (!this.running) return;
+        this.snake.x += this.dx;
+        this.snake.y += this.dy;
+
+        if (this.snake.x < 0) this.snake.x = this.canvas.width - this.grid;
+        if (this.snake.x >= this.canvas.width) this.snake.x = 0;
+        if (this.snake.y < 0) this.snake.y = this.canvas.height - this.grid;
+        if (this.snake.y >= this.canvas.height) this.snake.y = 0;
+
+        this.snake.cells.unshift({ x: this.snake.x, y: this.snake.y });
+        if (this.snake.x === this.food.x && this.snake.y === this.food.y) {
+            this.score++;
+            this.food.x = Math.floor(Math.random() * (this.canvas.width / this.grid)) * this.grid;
+            this.food.y = Math.floor(Math.random() * (this.canvas.height / this.grid)) * this.grid;
+        } else {
+            this.snake.cells.pop();
+        }
+
+        // Self collision
+        for (let i = 1; i < this.snake.cells.length; i++) {
+            if (this.snake.cells[i].x === this.snake.x && this.snake.cells[i].y === this.snake.y) {
+                this.gameOver();
+            }
+        }
+
+        this.draw();
+    }
+
+    draw() {
+        this.ctx.fillStyle = '#111';
+        this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+        
+        this.ctx.fillStyle = '#22c55e';
+        this.snake.cells.forEach(cell => this.ctx.fillRect(cell.x, cell.y, this.grid-1, this.grid-1));
+        
+        this.ctx.fillStyle = '#ef4444';
+        this.ctx.fillRect(this.food.x, this.food.y, this.grid-1, this.grid-1);
+        
+        this.ctx.fillStyle = '#fff';
+        this.ctx.font = '14px sans-serif';
+        this.ctx.fillText(`Score: ${this.score}`, 10, 20);
+    }
+
+    gameOver() {
+        this.running = false;
+        clearInterval(this.loop);
+        this.container.querySelector('#game-over').style.display = 'block';
+        this.container.querySelector('#final-score').innerText = this.score;
+    }
+    
+    restart() {
+        this.snake = { x: 160, y: 160, dx: 20, dy: 0, cells: [] };
+        this.score = 0;
+        this.running = true;
+        this.container.querySelector('#game-over').style.display = 'none';
+        this.loop = setInterval(() => this.update(), 100);
+    }
+}
+
+class CalcApp {
+    constructor(container) { this.container = container; }
+    mount() {
+        this.container.innerHTML = `
+            <div class="calc-grid">
+                <div class="calc-display" id="calc-disp">0</div>
+                <button class="calc-btn" onclick="CalcApp.eval('C')">C</button>
+                <button class="calc-btn" onclick="CalcApp.eval('/')">/</button>
+                <button class="calc-btn" onclick="CalcApp.eval('*')">*</button>
+                <button class="calc-btn" onclick="CalcApp.eval('-')">-</button>
+                <button class="calc-btn" onclick="CalcApp.eval('7')">7</button>
+                <button class="calc-btn" onclick="CalcApp.eval('8')">8</button>
+                <button class="calc-btn" onclick="CalcApp.eval('9')">9</button>
+                <button class="calc-btn op" onclick="CalcApp.eval('+')">+</button>
+                <button class="calc-btn" onclick="CalcApp.eval('4')">4</button>
+                <button class="calc-btn" onclick="CalcApp.eval('5')">5</button>
+                <button class="calc-btn" onclick="CalcApp.eval('6')">6</button>
+                <button class="calc-btn" onclick="CalcApp.eval('=')" style="grid-row:span 2; background:var(--primary)">=</button>
+                <button class="calc-btn" onclick="CalcApp.eval('1')">1</button>
+                <button class="calc-btn" onclick="CalcApp.eval('2')">2</button>
+                <button class="calc-btn" onclick="CalcApp.eval('3')">3</button>
+                <button class="calc-btn" onclick="CalcApp.eval('0')" style="grid-column:span 2">0</button>
+                <button class="calc-btn" onclick="CalcApp.eval('.')">.</button>
+            </div>
+        `;
+        this.expr = '';
+    }
+    static eval(val) {
+        const disp = document.querySelector('.calc-display'); // Simple selector for demo
+        // In real impl, scope to window
+        const win = document.activeElement.closest('.window');
+        const d = win ? win.querySelector('.calc-display') : document.querySelector('.calc-display');
+        
+        if (val === 'C') {
+            window.calcExpr = '';
+            d.innerText = '0';
+        } else if (val === '=') {
+            try {
+                window.calcExpr = eval(window.calcExpr).toString();
+                d.innerText = window.calcExpr;
+            } catch {
+                d.innerText = 'Error';
+                window.calcExpr = '';
+            }
+        } else {
+            window.calcExpr = (window.calcExpr || '') + val;
+            d.innerText = window.calcExpr;
+        }
+    }
+}
+window.calcExpr = '';
+
+class PaintApp {
+    constructor(container) { this.container = container; }
+    mount() {
+        this.container.innerHTML = `
+            <div style="display:flex; flex-direction:column; height:100%">
+                <div class="paint-toolbar">
+                    <button class="tool-btn active" title="Brush">🖌️</button>
+                    <button class="tool-btn" title="Eraser">🧹</button>
+                    <input type="color" value="#000000" style="width:30px; height:30px; border:none; background:none">
+                    <input type="range" min="1" max="20" value="5" style="width:100px">
+                </div>
+                <div class="paint-canvas-container">
+                    <canvas width="800" height="600" style="display:block"></canvas>
+                </div>
+            </div>
+        `;
+        const canvas = this.container.querySelector('canvas');
+        const ctx = canvas.getContext('2d');
+        let painting = false;
+
+        const start = (e) => { painting = true; draw(e); };
+        const end = () => { painting = false; ctx.beginPath(); };
+        const draw = (e) => {
+            if (!painting) return;
+            const rect = canvas.getBoundingClientRect();
+            ctx.lineWidth = 5;
+            ctx.lineCap = 'round';
+            ctx.lineTo(e.clientX - rect.left, e.clientY - rect.top);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(e.clientX - rect.left, e.clientY - rect.top);
+        };
+
+        canvas.addEventListener('mousedown', start);
+        canvas.addEventListener('mouseup', end);
+        canvas.addEventListener('mousemove', draw);
+    }
+}
+
+class FilesApp {
+    constructor(container) { this.container = container; }
+    mount() {
+        this.container.innerHTML = `
+            <div style="display:flex; height:100%">
+                <div style="width:150px; background:rgba(255,255,255,0.05); padding:10px; border-right:1px solid #333">
+                    <div style="padding:5px; color:var(--primary)">🏠 Home</div>
+                    <div style="padding:5px; color:#aaa">📄 Documents</div>
+                    <div style="padding:5px; color:#aaa">⬇️ Downloads</div>
+                    <div style="padding:5px; color:#aaa">🖼️ Pictures</div>
+                </div>
+                <div style="flex:1; padding:20px; display:grid; grid-template-columns:repeat(auto-fill, minmax(80px, 1fr)); gap:15px; align-content:start">
+                    <div style="text-align:center"><div style="font-size:40px">📁</div><div style="font-size:12px">Documents</div></div>
+                    <div style="text-align:center"><div style="font-size:40px">📁</div><div style="font-size:12px">Downloads</div></div>
+                    <div style="text-align:center"><div style="font-size:40px">📁</div><div style="font-size:12px">Pictures</div></div>
+                    <div style="text-align:center"><div style="font-size:40px">📄</div><div style="font-size:12px">readme.txt</div></div>
+                    <div style="text-align:center"><div style="font-size:40px">🎵</div><div style="font-size:12px">song.mp3</div></div>
+                </div>
+            </div>
+        `;
+    }
+}
+
+// --- Utilities ---
+function showContextMenu(x, y) {
+    const menu = document.getElementById('context-menu');
+    menu.style.display = 'block';
+    menu.style.left = x + 'px';
+    menu.style.top = y + 'px';
+    menu.innerHTML = `
+        <div class="ctx-item" onclick="WindowManager.open('terminal')">Open Terminal</div>
+        <div class="ctx-item" onclick="location.reload()">Refresh</div>
+        <div class="ctx-separator"></div>
+        <div class="ctx-item" onclick="WindowManager.open('settings')">Personalize</div>
+        <div class="ctx-item" onclick="alert('Properties: NexusOS v1.0')">Properties</div>
+    `;
+}
+
+function hideContextMenu() {
+    document.getElementById('context-menu').style.display = 'none';
+}
+
+// Initialize System
+window.onload = () => System.init();
+
+</script>
+</body>
+</html>
