@@ -1,0 +1,996 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Creative Portfolio</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg-primary: #0a0a0f;
+            --bg-secondary: #12121a;
+            --bg-tertiary: #1a1a2e;
+            --accent-primary: #6366f1;
+            --accent-secondary: #8b5cf6;
+            --accent-tertiary: #a855f7;
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+            --text-muted: #64748b;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            overflow-x: hidden;
+            line-height: 1.6;
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--bg-secondary);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: linear-gradient(180deg, var(--accent-primary), var(--accent-tertiary));
+            border-radius: 4px;
+        }
+
+        /* Navigation */
+        nav {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1000;
+            padding: 1.5rem 5%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            backdrop-filter: blur(20px);
+            background: rgba(10, 10, 15, 0.8);
+            border-bottom: 1px solid rgba(99, 102, 241, 0.1);
+            transition: all 0.3s ease;
+        }
+
+        .logo {
+            font-size: 1.8rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-tertiary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 2.5rem;
+            list-style: none;
+        }
+
+        .nav-links a {
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-weight: 500;
+            position: relative;
+            transition: color 0.3s ease;
+        }
+
+        .nav-links a::after {
+            content: '';
+            position: absolute;
+            bottom: -5px;
+            left: 0;
+            width: 0;
+            height: 2px;
+            background: linear-gradient(90deg, var(--accent-primary), var(--accent-tertiary));
+            transition: width 0.3s ease;
+        }
+
+        .nav-links a:hover {
+            color: var(--text-primary);
+        }
+
+        .nav-links a:hover::after {
+            width: 100%;
+        }
+
+        /* Hero Section */
+        .hero {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            padding: 6rem 5%;
+            overflow: hidden;
+        }
+
+        .hero-bg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+        }
+
+        .hero-content {
+            text-align: center;
+            max-width: 900px;
+            z-index: 1;
+        }
+
+        .hero h1 {
+            font-size: clamp(3rem, 8vw, 6rem);
+            font-weight: 800;
+            margin-bottom: 1.5rem;
+            opacity: 0;
+            transform: translateY(50px);
+            animation: fadeInUp 1s ease forwards 0.5s;
+        }
+
+        .hero h1 span {
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary), var(--accent-tertiary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .hero p {
+            font-size: 1.3rem;
+            color: var(--text-secondary);
+            margin-bottom: 2.5rem;
+            opacity: 0;
+            transform: translateY(30px);
+            animation: fadeInUp 1s ease forwards 0.8s;
+        }
+
+        .cta-btn {
+            display: inline-block;
+            padding: 1rem 2.5rem;
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-tertiary));
+            color: white;
+            text-decoration: none;
+            border-radius: 50px;
+            font-weight: 600;
+            font-size: 1.1rem;
+            transition: all 0.3s ease;
+            opacity: 0;
+            transform: translateY(30px);
+            animation: fadeInUp 1s ease forwards 1.1s;
+            box-shadow: 0 10px 30px rgba(99, 102, 241, 0.3);
+        }
+
+        .cta-btn:hover {
+            transform: translateY(-5px) scale(1.05);
+            box-shadow: 0 20px 40px rgba(99, 102, 241, 0.5);
+        }
+
+        @keyframes fadeInUp {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Sections */
+        section {
+            padding: 6rem 5%;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+        }
+
+        .section-title {
+            font-size: clamp(2.5rem, 5vw, 4rem);
+            font-weight: 700;
+            text-align: center;
+            margin-bottom: 4rem;
+            position: relative;
+        }
+
+        .section-title::after {
+            content: '';
+            position: absolute;
+            bottom: -15px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100px;
+            height: 4px;
+            background: linear-gradient(90deg, var(--accent-primary), var(--accent-tertiary));
+            border-radius: 2px;
+        }
+
+        /* About Section */
+        .about {
+            background: var(--bg-secondary);
+        }
+
+        .about-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 3rem;
+            max-width: 1200px;
+            margin: 0 auto;
+            align-items: center;
+        }
+
+        .about-image {
+            position: relative;
+            height: 400px;
+            border-radius: 20px;
+            overflow: hidden;
+            background: var(--bg-tertiary);
+        }
+
+        .about-image svg {
+            width: 100%;
+            height: 100%;
+        }
+
+        .about-content h3 {
+            font-size: 2rem;
+            margin-bottom: 1.5rem;
+            color: var(--accent-primary);
+        }
+
+        .about-content p {
+            color: var(--text-secondary);
+            margin-bottom: 1.5rem;
+            font-size: 1.1rem;
+        }
+
+        /* Skills Section */
+        .skills {
+            background: var(--bg-primary);
+        }
+
+        .skills-container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .skills-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 2rem;
+        }
+
+        .skill-card {
+            background: var(--bg-secondary);
+            padding: 2.5rem;
+            border-radius: 20px;
+            text-align: center;
+            transition: all 0.4s ease;
+            border: 1px solid transparent;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .skill-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(168, 85, 247, 0.1));
+            opacity: 0;
+            transition: opacity 0.4s ease;
+        }
+
+        .skill-card:hover {
+            transform: translateY(-10px);
+            border-color: var(--accent-primary);
+            box-shadow: 0 20px 40px rgba(99, 102, 241, 0.2);
+        }
+
+        .skill-card:hover::before {
+            opacity: 1;
+        }
+
+        .skill-icon {
+            width: 80px;
+            height: 80px;
+            margin: 0 auto 1.5rem;
+            position: relative;
+            z-index: 1;
+        }
+
+        .skill-card h4 {
+            font-size: 1.4rem;
+            margin-bottom: 1rem;
+            position: relative;
+            z-index: 1;
+        }
+
+        .skill-card p {
+            color: var(--text-secondary);
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Projects Section */
+        .projects {
+            background: var(--bg-secondary);
+        }
+
+        .projects-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 2.5rem;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .project-card {
+            background: var(--bg-tertiary);
+            border-radius: 20px;
+            overflow: hidden;
+            transition: all 0.4s ease;
+            position: relative;
+        }
+
+        .project-card:hover {
+            transform: translateY(-10px) scale(1.02);
+            box-shadow: 0 30px 60px rgba(99, 102, 241, 0.3);
+        }
+
+        .project-image {
+            height: 250px;
+            background: var(--bg-secondary);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .project-image svg {
+            width: 100%;
+            height: 100%;
+            transition: transform 0.4s ease;
+        }
+
+        .project-card:hover .project-image svg {
+            transform: scale(1.1);
+        }
+
+        .project-info {
+            padding: 2rem;
+        }
+
+        .project-info h4 {
+            font-size: 1.5rem;
+            margin-bottom: 0.8rem;
+            color: var(--accent-primary);
+        }
+
+        .project-info p {
+            color: var(--text-secondary);
+            margin-bottom: 1.5rem;
+        }
+
+        .project-tags {
+            display: flex;
+            gap: 0.8rem;
+            flex-wrap: wrap;
+        }
+
+        .tag {
+            padding: 0.4rem 1rem;
+            background: rgba(99, 102, 241, 0.2);
+            border-radius: 20px;
+            font-size: 0.85rem;
+            color: var(--accent-primary);
+        }
+
+        /* Contact Section */
+        .contact {
+            background: var(--bg-primary);
+        }
+
+        .contact-container {
+            max-width: 800px;
+            margin: 0 auto;
+            text-align: center;
+        }
+
+        .contact-content {
+            margin-bottom: 3rem;
+        }
+
+        .contact-content p {
+            font-size: 1.2rem;
+            color: var(--text-secondary);
+            margin-top: 1.5rem;
+        }
+
+        .social-links {
+            display: flex;
+            justify-content: center;
+            gap: 2rem;
+            margin-top: 3rem;
+        }
+
+        .social-link {
+            width: 60px;
+            height: 60px;
+            background: var(--bg-secondary);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .social-link:hover {
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-tertiary));
+            transform: translateY(-5px) rotate(360deg);
+        }
+
+        .social-link svg {
+            width: 28px;
+            height: 28px;
+            fill: var(--text-secondary);
+            transition: fill 0.3s ease;
+        }
+
+        .social-link:hover svg {
+            fill: white;
+        }
+
+        /* Footer */
+        footer {
+            background: var(--bg-secondary);
+            padding: 3rem 5%;
+            text-align: center;
+            border-top: 1px solid rgba(99, 102, 241, 0.1);
+        }
+
+        footer p {
+            color: var(--text-muted);
+        }
+
+        /* Scroll Animations */
+        .scroll-reveal {
+            opacity: 0;
+            transform: translateY(50px);
+            transition: all 0.8s ease;
+        }
+
+        .scroll-reveal.active {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .scroll-reveal-left {
+            opacity: 0;
+            transform: translateX(-50px);
+            transition: all 0.8s ease;
+        }
+
+        .scroll-reveal-left.active {
+            opacity: 1;
+            transform: translateX(0);
+        }
+
+        .scroll-reveal-right {
+            opacity: 0;
+            transform: translateX(50px);
+            transition: all 0.8s ease;
+        }
+
+        .scroll-reveal-right.active {
+            opacity: 1;
+            transform: translateX(0);
+        }
+
+        /* Floating Animation */
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-20px); }
+        }
+
+        .floating {
+            animation: float 6s ease-in-out infinite;
+        }
+
+        /* Pulse Animation */
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.05); opacity: 0.8; }
+        }
+
+        .pulse {
+            animation: pulse 3s ease-in-out infinite;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .nav-links {
+                display: none;
+            }
+
+            .hero h1 {
+                font-size: 2.5rem;
+            }
+
+            .skills-grid,
+            .projects-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav>
+        <div class="logo">Portfolio</div>
+        <ul class="nav-links">
+            <li><a href="#home">Home</a></li>
+            <li><a href="#about">About</a></li>
+            <li><a href="#skills">Skills</a></li>
+            <li><a href="#projects">Projects</a></li>
+            <li><a href="#contact">Contact</a></li>
+        </ul>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero" id="home">
+        <svg class="hero-bg" viewBox="0 0 1920 1080" preserveAspectRatio="xMidYMid slice">
+            <defs>
+                <linearGradient id="grad1" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" style="stop-color:#6366f1;stop-opacity:0.3" />
+                    <stop offset="100%" style="stop-color:#a855f7;stop-opacity:0.1" />
+                </linearGradient>
+                <filter id="glow">
+                    <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+                    <feMerge>
+                        <feMergeNode in="coloredBlur"/>
+                        <feMergeNode in="SourceGraphic"/>
+                    </feMerge>
+                </filter>
+            </defs>
+            
+            <!-- Animated Background Shapes -->
+            <g class="floating" style="animation-delay: 0s;">
+                <circle cx="200" cy="150" r="100" fill="url(#grad1)" filter="url(#glow)">
+                    <animate attributeName="cx" values="200;250;200" dur="8s" repeatCount="indefinite" />
+                    <animate attributeName="cy" values="150;180;150" dur="6s" repeatCount="indefinite" />
+                </circle>
+            </g>
+            
+            <g class="floating" style="animation-delay: 1s;">
+                <circle cx="1700" cy="200" r="150" fill="url(#grad1)" filter="url(#glow)">
+                    <animate attributeName="cx" values="1700;1650;1700" dur="10s" repeatCount="indefinite" />
+                    <animate attributeName="cy" values="200;250;200" dur="7s" repeatCount="indefinite" />
+                </circle>
+            </g>
+            
+            <g class="floating" style="animation-delay: 2s;">
+                <ellipse cx="400" cy="800" rx="120" ry="80" fill="url(#grad1)" filter="url(#glow)">
+                    <animate attributeName="cx" values="400;450;400" dur="9s" repeatCount="indefinite" />
+                    <animate attributeName="cy" values="800;750;800" dur="8s" repeatCount="indefinite" />
+                </ellipse>
+            </g>
+            
+            <g class="floating" style="animation-delay: 3s;">
+                <circle cx="1500" cy="700" r="130" fill="url(#grad1)" filter="url(#glow)">
+                    <animate attributeName="cx" values="1500;1550;1500" dur="11s" repeatCount="indefinite" />
+                    <animate attributeName="cy" values="700;750;700" dur="9s" repeatCount="indefinite" />
+                </circle>
+            </g>
+            
+            <g class="pulse">
+                <circle cx="960" cy="540" r="300" fill="none" stroke="#6366f1" stroke-width="1" opacity="0.2">
+                    <animate attributeName="r" values="300;400;300" dur="4s" repeatCount="indefinite" />
+                    <animate attributeName="opacity" values="0.2;0.1;0.2" dur="4s" repeatCount="indefinite" />
+                </circle>
+                <circle cx="960" cy="540" r="200" fill="none" stroke="#8b5cf6" stroke-width="1" opacity="0.3">
+                    <animate attributeName="r" values="200;280;200" dur="4s" repeatCount="indefinite" begin="-1s" />
+                    <animate attributeName="opacity" values="0.3;0.15;0.3" dur="4s" repeatCount="indefinite" begin="-1s" />
+                </circle>
+                <circle cx="960" cy="540" r="100" fill="none" stroke="#a855f7" stroke-width="1" opacity="0.4">
+                    <animate attributeName="r" values="100;160;100" dur="4s" repeatCount="indefinite" begin="-2s" />
+                    <animate attributeName="opacity" values="0.4;0.2;0.4" dur="4s" repeatCount="indefinite" begin="-2s" />
+                </circle>
+            </g>
+            
+            <!-- Connecting Lines -->
+            <path d="M 100 300 Q 480 100 960 300 T 1820 300" stroke="#6366f1" stroke-width="1" fill="none" opacity="0.1">
+                <animate attributeName="d" values="M 100 300 Q 480 100 960 300 T 1820 300;M 100 350 Q 480 150 960 350 T 1820 350;M 100 300 Q 480 100 960 300 T 1820 300" dur="6s" repeatCount="indefinite" />
+            </path>
+            
+            <path d="M 100 700 Q 480 500 960 700 T 1820 700" stroke="#8b5cf6" stroke-width="1" fill="none" opacity="0.1">
+                <animate attributeName="d" values="M 100 700 Q 480 500 960 700 T 1820 700;M 100 650 Q 480 450 960 650 T 1820 650;M 100 700 Q 480 500 960 700 T 1820 700" dur="7s" repeatCount="indefinite" begin="-2s" />
+            </path>
+        </svg>
+        
+        <div class="hero-content">
+            <h1>Creative <span>Developer</span> & Designer</h1>
+            <p>I craft beautiful digital experiences with modern technologies and stunning visuals</p>
+            <a href="#projects" class="cta-btn">View My Work</a>
+        </div>
+    </section>
+
+    <!-- About Section -->
+    <section class="about" id="about">
+        <div class="about-grid">
+            <div class="about-image scroll-reveal-left">
+                <svg viewBox="0 0 400 400" preserveAspectRatio="xMidYMid slice">
+                    <defs>
+                        <linearGradient id="avatarGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" style="stop-color:#6366f1" />
+                            <stop offset="100%" style="stop-color:#a855f7" />
+                        </linearGradient>
+                    </defs>
+                    <rect width="400" height="400" fill="#1a1a2e"/>
+                    <circle cx="200" cy="180" r="80" fill="url(#avatarGrad)">
+                        <animate attributeName="r" values="80;85;80" dur="3s" repeatCount="indefinite" />
+                    </circle>
+                    <ellipse cx="200" cy="350" rx="120" ry="60" fill="url(#avatarGrad)">
+                        <animate attributeName="ry" values="60;65;60" dur="3s" repeatCount="indefinite" begin="-1.5s" />
+                    </ellipse>
+                    <circle cx="170" cy="160" r="8" fill="#0a0a0f"/>
+                    <circle cx="230" cy="160" r="8" fill="#0a0a0f"/>
+                    <path d="M 170 200 Q 200 230 230 200" stroke="#0a0a0f" stroke-width="4" fill="none" stroke-linecap="round"/>
+                    
+                    <!-- Decorative elements -->
+                    <circle cx="80" cy="100" r="20" fill="none" stroke="#6366f1" stroke-width="2" opacity="0.5">
+                        <animate attributeName="r" values="20;25;20" dur="2s" repeatCount="indefinite" />
+                        <animate attributeName="opacity" values="0.5;0.3;0.5" dur="2s" repeatCount="indefinite" />
+                    </circle>
+                    <circle cx="320" cy="120" r="15" fill="none" stroke="#8b5cf6" stroke-width="2" opacity="0.5">
+                        <animate attributeName="r" values="15;20;15" dur="2.5s" repeatCount="indefinite" begin="-0.5s" />
+                        <animate attributeName="opacity" values="0.5;0.3;0.5" dur="2.5s" repeatCount="indefinite" begin="-0.5s" />
+                    </circle>
+                    <circle cx="350" cy="300" r="25" fill="none" stroke="#a855f7" stroke-width="2" opacity="0.5">
+                        <animate attributeName="r" values="25;30;25" dur="3s" repeatCount="indefinite" begin="-1s" />
+                        <animate attributeName="opacity" values="0.5;0.3;0.5" dur="3s" repeatCount="indefinite" begin="-1s" />
+                    </circle>
+                </svg>
+            </div>
+            <div class="about-content scroll-reveal-right">
+                <h2 class="section-title" style="text-align: left; margin-bottom: 2rem;">About Me</h2>
+                <h3>Passionate about creating digital excellence</h3>
+                <p>I'm a creative developer and designer with a passion for building beautiful, functional, and user-centered digital experiences. With years of experience in web development, I specialize in creating modern applications that combine aesthetics with performance.</p>
+                <p>My approach focuses on understanding user needs and translating them into intuitive interfaces. I believe in clean code, thoughtful design, and continuous learning to stay at the forefront of technology.</p>
+                <p>When I'm not coding, you can find me exploring new design trends, contributing to open-source projects, or experimenting with emerging technologies.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Skills Section -->
+    <section class="skills" id="skills">
+        <div class="skills-container">
+            <h2 class="section-title scroll-reveal">My Skills</h2>
+            <div class="skills-grid">
+                <div class="skill-card scroll-reveal">
+                    <svg class="skill-icon" viewBox="0 0 80 80">
+                        <defs>
+                            <linearGradient id="htmlGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                                <stop offset="0%" style="stop-color:#6366f1" />
+                                <stop offset="100%" style="stop-color:#8b5cf6" />
+                            </linearGradient>
+                        </defs>
+                        <rect x="10" y="10" width="60" height="60" rx="8" fill="none" stroke="url(#htmlGrad)" stroke-width="2"/>
+                        <path d="M 25 30 L 30 55 L 40 60 L 50 55 L 55 30 Z" fill="url(#htmlGrad)">
+                            <animate attributeName="fill-opacity" values="1;0.7;1" dur="2s" repeatCount="indefinite" />
+                        </path>
+                        <line x1="30" y1="40" x2="50" y2="40" stroke="#0a0a0f" stroke-width="2"/>
+                        <line x1="32" y1="48" x2="48" y2="48" stroke="#0a0a0f" stroke-width="2"/>
+                    </svg>
+                    <h4>Frontend Development</h4>
+                    <p>Building responsive and interactive user interfaces with modern frameworks</p>
+                </div>
+                
+                <div class="skill-card scroll-reveal" style="transition-delay: 0.1s;">
+                    <svg class="skill-icon" viewBox="0 0 80 80">
+                        <defs>
+                            <linearGradient id="cssGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                                <stop offset="0%" style="stop-color:#8b5cf6" />
+                                <stop offset="100%" style="stop-color:#a855f7" />
+                            </linearGradient>
+                        </defs>
+                        <circle cx="40" cy="40" r="30" fill="none" stroke="url(#cssGrad)" stroke-width="2"/>
+                        <circle cx="40" cy="40" r="20" fill="none" stroke="url(#cssGrad)" stroke-width="2">
+                            <animateTransform attributeName="transform" type="rotate" from="0 40 40" to="360 40 40" dur="10s" repeatCount="indefinite" />
+                        </circle>
+                        <circle cx="40" cy="40" r="10" fill="url(#cssGrad)">
+                            <animate attributeName="r" values="10;12;10" dur="1.5s" repeatCount="indefinite" />
+                        </circle>
+                    </svg>
+                    <h4>UI/UX Design</h4>
+                    <p>Creating intuitive and aesthetically pleasing user experiences</p>
+                </div>
+                
+                <div class="skill-card scroll-reveal" style="transition-delay: 0.2s;">
+                    <svg class="skill-icon" viewBox="0 0 80 80">
+                        <defs>
+                            <linearGradient id="jsGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                                <stop offset="0%" style="stop-color:#a855f7" />
+                                <stop offset="100%" style="stop-color:#6366f1" />
+                            </linearGradient>
+                        </defs>
+                        <polygon points="40,10 65,25 65,55 40,70 15,55 15,25" fill="none" stroke="url(#jsGrad)" stroke-width="2"/>
+                        <polygon points="40,20 55,30 55,50 40,60 25,50 25,30" fill="url(#jsGrad)" opacity="0.5">
+                            <animate attributeName="opacity" values="0.5;0.8;0.5" dur="2s" repeatCount="indefinite" />
+                        </polygon>
+                        <circle cx="40" cy="40" r="8" fill="#0a0a0f"/>
+                    </svg>
+                    <h4>JavaScript</h4>
+                    <p>Developing dynamic applications with modern JavaScript and frameworks</p>
+                </div>
+                
+                <div class="skill-card scroll-reveal" style="transition-delay: 0.3s;">
+                    <svg class="skill-icon" viewBox="0 0 80 80">
+                        <defs>
+                            <linearGradient id="backendGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                                <stop offset="0%" style="stop-color:#6366f1" />
+                                <stop offset="100%" style="stop-color:#a855f7" />
+                            </linearGradient>
+                        </defs>
+                        <rect x="20" y="20" width="40" height="40" rx="4" fill="none" stroke="url(#backendGrad)" stroke-width="2"/>
+                        <rect x="25" y="25" width="30" height="15" rx="2" fill="url(#backendGrad)" opacity="0.6"/>
+                        <rect x="25" y="45" width="30" height="10" rx="2" fill="url(#backendGrad)" opacity="0.4"/>
+                        <circle cx="32" cy="50" r="2" fill="#0a0a0f"/>
+                        <circle cx="40" cy="50" r="2" fill="#0a0a0f"/>
+                        <circle cx="48" cy="50" r="2" fill="#0a0a0f"/>
+                    </svg>
+                    <h4>Backend Development</h4>
+                    <p>Building robust server-side applications and APIs</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Projects Section -->
+    <section class="projects" id="projects">
+        <h2 class="section-title scroll-reveal">Featured Projects</h2>
+        <div class="projects-grid">
+            <div class="project-card scroll-reveal">
+                <div class="project-image">
+                    <svg viewBox="0 0 400 250" preserveAspectRatio="xMidYMid slice">
+                        <defs>
+                            <linearGradient id="proj1Grad" x1="0%" y1="0%" x2="100%" y2="100%">
+                                <stop offset="0%" style="stop-color:#6366f1" />
+                                <stop offset="100%" style="stop-color:#8b5cf6" />
+                            </linearGradient>
+                        </defs>
+                        <rect width="400" height="250" fill="#12121a"/>
+                        <rect x="50" y="40" width="300" height="170" rx="8" fill="none" stroke="url(#proj1Grad)" stroke-width="2"/>
+                        <rect x="70" y="60" width="260" height="20" rx="4" fill="url(#proj1Grad)" opacity="0.3"/>
+                        <rect x="70" y="90" width="200" height="10" rx="2" fill="url(#proj1Grad)" opacity="0.5"/>
+                        <rect x="70" y="110" width="180" height="10" rx="2" fill="url(#proj1Grad)" opacity="0.4"/>
+                        <rect x="70" y="130" width="220" height="10" rx="2" fill="url(#proj1Grad)" opacity="0.5"/>
+                        <circle cx="320" cy="180" r="20" fill="url(#proj1Grad)">
+                            <animate attributeName="r" values="20;25;20" dur="2s" repeatCount="indefinite" />
+                        </circle>
+                    </svg>
+                </div>
+                <div class="project-info">
+                    <h4>E-Commerce Platform</h4>
+                    <p>A full-featured online store with modern UI, secure payments, and inventory management</p>
+                    <div class="project-tags">
+                        <span class="tag">React</span>
+                        <span class="tag">Node.js</span>
+                        <span class="tag">MongoDB</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="project-card scroll-reveal" style="transition-delay: 0.1s;">
+                <div class="project-image">
+                    <svg viewBox="0 0 400 250" preserveAspectRatio="xMidYMid slice">
+                        <defs>
+                            <linearGradient id="proj2Grad" x1="0%" y1="0%" x2="100%" y2="100%">
+                                <stop offset="0%" style="stop-color:#8b5cf6" />
+                                <stop offset="100%" style="stop-color:#a855f7" />
+                            </linearGradient>
+                        </defs>
+                        <rect width="400" height="250" fill="#12121a"/>
+                        <circle cx="200" cy="125" r="80" fill="none" stroke="url(#proj2Grad)" stroke-width="2">
+                            <animateTransform attributeName="transform" type="rotate" from="0 200 125" to="360 200 125" dur="20s" repeatCount="indefinite" />
+                        </circle>
+                        <circle cx="200" cy="125" r="60" fill="none" stroke="url(#proj2Grad)" stroke-width="2">
+                            <animateTransform attributeName="transform" type="rotate" from="360 200 125" to="0 200 125" dur="15s" repeatCount="indefinite" />
+                        </circle>
+                        <circle cx="200" cy="125" r="40" fill="none" stroke="url(#proj2Grad)" stroke-width="2">
+                            <animateTransform attributeName="transform" type="rotate" from="0 200 125" to="360 200 125" dur="10s" repeatCount="indefinite" />
+                        </circle>
+                        <circle cx="200" cy="125" r="20" fill="url(#proj2Grad)">
+                            <animate attributeName="r" values="20;25;20" dur="3s" repeatCount="indefinite" />
+                        </circle>
+                    </svg>
+                </div>
+                <div class="project-info">
+                    <h4>Analytics Dashboard</h4>
+                    <p>Real-time data visualization dashboard with interactive charts and insights</p>
+                    <div class="project-tags">
+                        <span class="tag">Vue.js</span>
+                        <span class="tag">D3.js</span>
+                        <span class="tag">Firebase</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="project-card scroll-reveal" style="transition-delay: 0.2s;">
+                <div class="project-image">
+                    <svg viewBox="0 0 400 250" preserveAspectRatio="xMidYMid slice">
+                        <defs>
+                            <linearGradient id="proj3Grad" x1="0%" y1="0%" x2="100%" y2="100%">
+                                <stop offset="0%" style="stop-color:#a855f7" />
+                                <stop offset="100%" style="stop-color:#6366f1" />
+                            </linearGradient>
+                        </defs>
+                        <rect width="400" height="250" fill="#12121a"/>
+                        <rect x="40" y="60" width="100" height="130" rx="8" fill="none" stroke="url(#proj3Grad)" stroke-width="2"/>
+                        <rect x="150" y="40" width="100" height="170" rx="8" fill="none" stroke="url(#proj3Grad)" stroke-width="2"/>
+                        <rect x="260" y="80" width="100" height="110" rx="8" fill="none" stroke="url(#proj3Grad)" stroke-width="2"/>
+                        <rect x="50" y="80" width="80" height="60" rx="4" fill="url(#proj3Grad)" opacity="0.3"/>
+                        <rect x="160" y="60" width="80" height="80" rx="4" fill="url(#proj3Grad)" opacity="0.4"/>
+                        <rect x="270" y="100" width="80" height="50" rx="4" fill="url(#proj3Grad)" opacity="0.3"/>
+                        <circle cx="90" cy="160" r="15" fill="url(#proj3Grad)">
+                            <animate attributeName="cy" values="160;155;160" dur="2s" repeatCount="indefinite" />
+                        </circle>
+                        <circle cx="200" cy="180" r="15" fill="url(#proj3Grad)">
+                            <animate attributeName="cy" values="180;175;180" dur="2.5s" repeatCount="indefinite" begin="-0.5s" />
+                        </circle>
+                        <circle cx="310" cy="160" r="15" fill="url(#proj3Grad)">
+                            <animate attributeName="cy" values="160;155;160" dur="2s" repeatCount="indefinite" begin="-1s" />
+                        </circle>
+                    </svg>
+                </div>
+                <div class="project-info">
+                    <h4>Task Management App</h4>
+                    <p>Collaborative project management tool with real-time updates and team features</p>
+                    <div class="project-tags">
+                        <span class="tag">Next.js</span>
+                        <span class="tag">TypeScript</span>
+                        <span class="tag">PostgreSQL</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Contact Section -->
+    <section class="contact" id="contact">
+        <div class="contact-container">
+            <h2 class="section-title scroll-reveal">Get In Touch</h2>
+            <div class="contact-content scroll-reveal">
+                <svg width="120" height="120" viewBox="0 0 120 120" class="floating">
+                    <defs>
+                        <linearGradient id="contactGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" style="stop-color:#6366f1" />
+                            <stop offset="100%" style="stop-color:#a855f7" />
+                        </linearGradient>
+                    </defs>
+                    <circle cx="60" cy="60" r="50" fill="none" stroke="url(#contactGrad)" stroke-width="2"/>
+                    <path d="M 35 50 L 60 70 L 85 50" stroke="url(#contactGrad)" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+                    <rect x="35" y="45" width="50" height="40" rx="4" fill="none" stroke="url(#contactGrad)" stroke-width="2"/>
+                    <circle cx="60" cy="60" r="5" fill="url(#contactGrad)">
+                        <animate attributeName="r" values="5;7;5" dur="1.5s" repeatCount="indefinite" />
+                    </circle>
+                </svg>
+                <h3 style="font-size: 2rem; margin-top: 2rem; color: var(--accent-primary);">Let's Work Together</h3>
+                <p>Have a project in mind? I'd love to hear about it. Let's create something amazing together!</p>
+            </div>
+            
+            <div class="social-links scroll-reveal">
+                <div class="social-link">
+                    <svg viewBox="0 0 24 24">
+                        <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-6.27 0-1.38.495-2.535 1.305-3.435-.135-.315-.57-1.635.12-3.405 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.69 1.77.255 3.09.12 3.405.81.9 1.305 2.04 1.305 3.435 0 4.95-2.805 5.97-5.475 6.27.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/>
+                    </svg>
+                </div>
+                <div class="social-link">
+                    <svg viewBox="0 0 24 24">
+                        <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/>
+                    </svg>
+                </div>
+                <div class="social-link">
+                    <svg viewBox="0 0 24 24">
+                        <path d="M23.953 4.57a10 10 0 01-2.825.775 4.958 4.958 0 002.163-2.723c-.951.555-2.005.959-3.127 1.184a4.92 4.92 0 00-8.384 4.482C7.69 8.095 4.067 6.13 1.64 3.162a4.822 4.822 0 00-.666 2.475c0 1.71.87 3.213 2.188 4.096a4.904 4.904 0 01-2.228-.616v.06a4.923 4.923 0 003.946 4.827 4.996 4.996 0 01-2.212.085 4.936 4.936 0 004.604 3.417 9.867 9.867 0 01-6.102 2.105c-.39 0-.779-.023-1.17-.067a13.995 13.995 0 007.557 2.209c9.053 0 13.998-7.496 13.998-13.985 0-.21 0-.42-.015-.63A9.935 9.935 0 0024 4.59z"/>
+                    </svg>
+                </div>
+                <div class="social-link">
+                    <svg viewBox="0 0 24 24">
+                        <path d="M12 0C5.374 0 0 5.373 0 12c0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23A11.509 11.509 0 0112 5.803c1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576C20.566 21.797 24 17.3 24 12c0-6.627-5.373-12-12-12z"/>
+                    </svg>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+        <p>&copy; 2024 Creative Portfolio. All rights reserved. Crafted with ❤️</p>
+    </footer>
+
+    <script>
+        // Scroll Reveal Animation
+        function revealOnScroll() {
+            const reveals = document.querySelectorAll('.scroll-reveal, .scroll-reveal-left, .scroll-reveal-right');
+            
+            reveals.forEach(element => {
+                const windowHeight = window.innerHeight;
+                const elementTop = element.getBoundingClientRect().top;
+                const elementVisible = 150;
+                
+                if (elementTop < windowHeight - elementVisible) {
+                    element.classList.add('active');
+                }
+            });
+        }
+
+        window.addEventListener('scroll', revealOnScroll);
+        window.addEventListener('load', revealOnScroll);
+
+        // Smooth scroll for navigation links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function(e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+                }
+            });
+        });
+
+        // Parallax effect for hero background
+        window.addEventListener('scroll', () => {
+            const scrolled = window.pageYOffset;
+            const heroBg = document.querySelector('.hero-bg');
+            if (heroBg) {
+                heroBg.style.transform = `translateY(${scrolled * 0.5}px)`;
+            }
+        });
+
+        // Add hover effect to skill cards with mouse movement
+        document.querySelectorAll('.skill-card').forEach(card => {
+            card.addEventListener('mousemove', (e) => {
+                const rect = card.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+                
+                card.style.setProperty('--mouse-x', `${x}px`);
+                card.style.setProperty('--mouse-y', `${y}px`);
+            });
+        });
+
+        // Intersection Observer for better performance
+        const observerOptions = {
+            threshold: 0.1,
+            rootMargin: '0px 0px -100px 0px'
+        };
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('active');
+                }
+            });
+        }, observerOptions);
+
+        document.querySelectorAll('.scroll-reveal, .scroll-reveal-left, .scroll-reveal-right').forEach(el => {
+            observer.observe(el);
+        });
+    </script>
+</body>
+</html>
